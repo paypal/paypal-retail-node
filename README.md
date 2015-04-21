@@ -1,6 +1,8 @@
 Authentication for the Retail SDK
 =================================
 
+[![Build Status](https://travis-ci.org/djMax/paypal-retail-node.svg)](https://travis-ci.org/djMax/paypal-retail-node)
+
 [TL;DR](http://www.urbandictionary.com/define.php?term=tl%3Bdr): You need to use your
 [client ID and secret from developer.paypal.com](https://developer.paypal.com/developer/applications)
 to get a token to call InitializeMerchant within the SDK. You can use our modules in your own server
