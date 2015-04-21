@@ -5,26 +5,38 @@ var express = require('express'),
 /**
  * These are the variables we will look for in the environment, from "most important" to least
  */
-// The base URL by which this server can be reached on the Internet (e.g. for token refresh)
-var ROOT_URL = process.env.ROOT_URL;
 // A random value used to provide additional control to disable compromised versions of your app
 var APP_SECURE_IDENTIFIER = process.env.APP_SECURE_IDENTIFIER;
 var PAYPAL_LIVE_CLIENTID = process.env.PAYPAL_LIVE_CLIENTID;
 var PAYPAL_LIVE_SECRET = process.env.PAYPAL_LIVE_SECRET;
 var PAYPAL_SANDBOX_CLIENTID = process.env.PAYPAL_SANDBOX_CLIENTID;
 var PAYPAL_SANDBOX_SECRET = process.env.PAYPAL_SANDBOX_SECRET;
+// The base URL by which this server can be reached on the Internet (e.g. for token refresh)
+var ROOT_URL = process.env.ROOT_URL;
 // For third-party use, you will want this site to redirect to your app after the login flow completes.
 // This URL will receive the access_token, refresh_url, and expires_in values as query arguments.
 // If you don't set this value, this server essentially becomes "first party use only" as all it can do
 // is refresh tokens generated with /firstParty
 var APP_REDIRECT_URL = process.env.APP_REDIRECT_URL;
 
-var errors, warnings;
+var errors, warnings, hasLive, hasSandbox;
 
 validateEnvironment();
 
 if (!errors) {
     showStartupMessage();
+}
+
+// Pick it up from the request if it's not set, and wait to configure PayPal until we have it.
+if (!ROOT_URL) {
+    app.use(function (req,res,next) {
+        if (!ROOT_URL) {
+            ROOT_URL = req.protocol + '://' + req.get('host');
+        }
+        next();
+    });
+} else {
+    configurePayPal();
 }
 
 /******************************** Express Routes and Server ********************************/
@@ -70,6 +82,29 @@ var server = app.listen(process.env.PORT || 3000, function () {
 
 
 /******************************** The rest is just boring helpers ********************************/
+function configurePayPal() {
+    if (hasLive) {
+        // This line adds the live configuration to the PayPal module.
+        // If you're going to write your own server, this is the money line
+        paypal.configure(paypal.LIVE, {
+            clientId: PAYPAL_LIVE_CLIENTID,
+            secret: PAYPAL_LIVE_SECRET,
+            returnUrl: combineUrl(ROOT_URL, 'returnFromPayPal'),
+            refreshUrl: combineUrl(ROOT_URL, 'refresh'),
+            scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
+        });
+    }
+    if (hasSandbox) {
+        // This line adds the sandbox configuration to the PayPal module
+        paypal.configure(paypal.SANDBOX, {
+            clientId: PAYPAL_SANDBOX_CLIENTID,
+            secret: PAYPAL_SANDBOX_SECRET,
+            returnUrl: combineUrl(ROOT_URL, 'returnFromPayPal'),
+            refreshUrl: combineUrl(ROOT_URL, 'refresh'),
+            scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
+        });
+    }
+}
 
 /**
  * Environment validation and usage display
@@ -79,14 +114,8 @@ function validateEnvironment() {
     /**
      * Analyze the environment and make sure things are setup properly
      */
-    if (!ROOT_URL) {
-        error('The environment variable ROOT_URL must be set to the root URL of this server, such as http://paypalservice.mybossapp.com');
-    }
     if (!APP_SECURE_IDENTIFIER) {
         error('The APP_SECURE_IDENTIFIER value is missing from the environment. It should be set to a reasonably long set of random characters (e.g. 32)');
-    }
-    if (!APP_REDIRECT_URL) {
-        warn('The APP_REDIRECT_URL value is missing from the environment. You will only be able to use this service to authenticate via /setup.');
     }
     if (!PAYPAL_LIVE_CLIENTID && !PAYPAL_SANDBOX_CLIENTID) {
         error('The server must be configured for sandbox, live, or both. Neither PAYPAL_LIVE_CLIENTID or PAYPAL_SANDBOX_CLIENTID is set in the environment.');
@@ -97,15 +126,7 @@ function validateEnvironment() {
             if (!PAYPAL_LIVE_SECRET) {
                 error('PAYPAL_LIVE_CLIENTID is set, but PAYPAL_LIVE_SECRET is not. The app needs the client id and secret to function.');
             } else {
-                // This line adds the live configuration to the PayPal module.
-                // If you're going to write your own server, this is the money line
-                paypal.configure(paypal.LIVE, {
-                    clientId: PAYPAL_LIVE_CLIENTID,
-                    secret: PAYPAL_LIVE_SECRET,
-                    returnUrl: combineUrl(ROOT_URL, 'returnFromPayPal'),
-                    refreshUrl: combineUrl(ROOT_URL, 'refresh'),
-                    scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
-                });
+                hasLive = true;
             }
         }
         if (!PAYPAL_SANDBOX_CLIENTID) {
@@ -114,16 +135,15 @@ function validateEnvironment() {
             if (!PAYPAL_SANDBOX_SECRET) {
                 error('PAYPAL_SANDBOX_CLIENTID is set, but PAYPAL_SANDBOX_SECRET is not. The app needs the client id and secret to function.');
             } else {
-                // This line adds the sandbox configuration to the PayPal module
-                paypal.configure(paypal.SANDBOX, {
-                    clientId: PAYPAL_SANDBOX_CLIENTID,
-                    secret: PAYPAL_SANDBOX_SECRET,
-                    returnUrl: combineUrl(ROOT_URL, 'returnFromPayPal'),
-                    refreshUrl: combineUrl(ROOT_URL, 'refresh'),
-                    scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
-                });
+                hasSandbox = true;
             }
         }
+    }
+    if (!APP_REDIRECT_URL) {
+        warn('The APP_REDIRECT_URL value is missing from the environment. You will only be able to use this service to authenticate via /setup.');
+    }
+    if (!ROOT_URL) {
+        warn('The environment variable ROOT_URL should be set to the root URL of this server, such as http://paypalservice.mybossapp.com');
     }
 }
 

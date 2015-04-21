@@ -8,9 +8,9 @@
   ],
   "repository": "https://github.com/djMax/paypal-retail-node.git",
   "env": {
-    "ROOT_URL": {
-      "description": "The base URL by which this server can be reached on the Internet",
-      "required": true
+    "SETUP_ENABLED": {
+      "description": "True to allow tokens to be generated and displayed back to the browser. You should turn this off before going 'live'.",
+      "value": "true"
     },
     "APP_SECURE_IDENTIFIER": {
       "description": "A random value used to provide additional control to disable compromised versions of your app. If you run multiple load balanced dynos, this must be the same for all",
@@ -31,6 +31,10 @@
     },
     "PAYPAL_SANDBOX_SECRET": {
       "description": "The application secret for the SANDBOX PayPal Environment",
+      "required": false
+    },
+    "ROOT_URL": {
+      "description": "The base URL by which this server can be reached on the Internet. If not set, we will fetch from the request URL.",
       "required": false
     },
     "APP_REDIRECT_URL": {

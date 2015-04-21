@@ -14,10 +14,13 @@ To get started, deploy to Heroku and then configure the environment variables in
 
 <table>
 <tr><th colspan="2">Required Environment Variables</th></tr>
-<tr><td>ROOT_URL</td><td>The root URL of your new server, e.g. http://something.herokuapp.com</td></tr>
 <tr><td>APP_SECURE_IDENTIFIER</td><td>A value [you make up](https://identitysafe.norton.com/password-generator/)
  and keep secret to protect your PayPal refresh tokens.</td></tr>
 <tr><th colspan="2">Other Environment Variables</th></tr>
+<tr><td>SETUP_ENABLED</td><td>If set to true, you can go to /setup/live or /setup/sandbox to generate a token which you
+can copy into your code. You should turn this off in a 'live' server.</td></tr>
+<tr><td>ROOT_URL</td><td>The root URL of your new server, e.g. http://something.herokuapp.com. If not set, we will pull
+it from the first request we see.</td></tr>
 <tr><td>PAYPAL_LIVE_CLIENTID</td><td>The PayPal client id for your application in the live environment.</td></tr>
 <tr><td>PAYPAL_LIVE_SECRET</td><td>The PayPal secret for your application in the live environment.</td></tr>
 <tr><td>PAYPAL_SANDBOX_CLIENTID</td><td>The PayPal client id for your application in the sandbox environment</td></tr>
