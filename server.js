@@ -72,6 +72,15 @@ app.get('/returnFromPayPal', function (req, res) {
     });
 });
 
+app.get('/refresh', function (req, res) {
+    paypal.refresh(req.query, APP_SECURE_IDENTIFIER, function (error, token) {
+        if (error) {
+            return res.status(500).send(error.message);
+        }
+        res.json(token);
+    });
+});
+
 app.get('/', allErrorsAreBelongToUs, function (req, res) {
     var ret = '<html><body><h1>Server is Ready</h1>';
     if (isSetupEnabled()) {

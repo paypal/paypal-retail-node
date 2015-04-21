@@ -42,6 +42,39 @@ module.exports = {
                 encodeURIComponent(JSON.stringify([env,finalUrl])));
         }
     },
+    refresh: function (query, app_secure_identifier, callback) {
+        if (!query.token) {
+            throw new Error('Refresh token is missing from request.');
+        }
+        decrypt(query.token, app_secure_identifier, function (e, plain) {
+            if (e) {
+                console.error(e.message, e.stack);
+                return callback(new Error('Invalid refresh token presented.'));
+            }
+            try {
+                // [0] = environment, [1] = raw refresh token
+                var info = JSON.parse(plain);
+                var url = tsUrl(info[0]);
+                var cfg = configs[info[0]];
+                if (!cfg) {
+                    return callback(new Error('Invalid environment ' + encodeURIComponent(info[0])));
+                }
+                wreck.post(url, {
+                    payload: util.format('grant_type&refresh_token&refresh_token=%s', encodeURIComponent(info[1])),
+                    json: 'force',
+                    headers: {
+                        'Authorization': 'Basic ' + new Buffer(cfg.clientId + ':' + cfg.secret).toString('base64'),
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }, function (err, rz, payload) {
+                    console.log(payload);
+                    callback(null, 'foo');
+                });
+            } catch (x) {
+                return callback(new Error('Invalid refresh token presented.'));
+            }
+        });
+    },
     completeAuthentication: function (query, app_secure_identifier, callback) {
         if (!app_secure_identifier) {
             throw new Error('app_secure_identifier parameter is required to complete authentication.');
@@ -49,17 +82,12 @@ module.exports = {
         if (!callback || typeof(callback) !== 'function') {
             throw new Error('completeAuthentication requires a callback parameter that is a function.');
         }
-        var url = 'https://api.paypal.com/v1/identity/openidconnect/tokenservice';
         var state = JSON.parse(query.state);
         if (!state || state.length < 2) {
             throw new Error('The "state" parameter is invalid when trying to complete PayPal authentication.');
         }
         var env = state[0];
-        if (env == module.exports.SANDBOX) {
-            url = 'https://api.sandbox.paypal.com/v1/identity/openidconnect/tokenservice';
-        } else if (env.indexOf('stage2') === 0) {
-            url = util.format('https://www.%s.stage.paypal.com:12714/v1/identity/openidconnect/tokenservice', env);
-        }
+        var url = tsUrl(env);
         var cfg = configs[env];
         wreck.post(url, {
             payload: util.format('grant_type=authorization_code&code=%s&redirect_uri=%s', encodeURIComponent(query.code), encodeURIComponent(cfg.returnUrl)),
@@ -77,7 +105,7 @@ module.exports = {
             }
             var returnUrl = state[1] + (state[1].indexOf('?')>=0 ? '&':'?') + "sdk_token=";
             var refreshUrl = cfg.refreshUrl + (cfg.refreshUrl.indexOf('?')>=0 ? '&':'?');
-            encrypt(payload.refresh_token, app_secure_identifier, function encryptionDone (e,v) {
+            encrypt(JSON.stringify(env, payload.refresh_token), app_secure_identifier, function encryptionDone (e,v) {
                 if (e) {
                     return callback(e);
                 }
@@ -98,6 +126,16 @@ module.exports = {
     LIVE: 'live',
     SANDBOX: 'sandbox'
 };
+
+function tsUrl(env) {
+    var url = 'https://api.paypal.com/v1/identity/openidconnect/tokenservice';
+    if (env == module.exports.SANDBOX) {
+        url = 'https://api.sandbox.paypal.com/v1/identity/openidconnect/tokenservice';
+    } else if (env.indexOf('stage2') === 0) {
+        url = util.format('https://www.%s.stage.paypal.com:12714/v1/identity/openidconnect/tokenservice', env);
+    }
+    return url;
+}
 
 
 function encrypt(plainText, password, cb) {
