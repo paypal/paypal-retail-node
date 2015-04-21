@@ -29,7 +29,7 @@ if (!errors) {
 
 // Pick it up from the request if it's not set, and wait to configure PayPal until we have it.
 if (!ROOT_URL) {
-    app.use(function (req,res,next) {
+    app.use(function (req, res, next) {
         if (!ROOT_URL) {
             ROOT_URL = req.protocol + '://' + req.get('host');
         }
@@ -47,9 +47,9 @@ if (isSetupEnabled()) {
         res.redirect(paypal.redirect(req.params.env, '/setup'));
     });
     app.get('/setup', function (req, res) {
-        res.send('<html><body><H1>InitializeMerchant Token</H1><p>This token requires this server to be running so it can '+
-        'be refreshed automatically. It will work for about 8 hours before a refresh is required.</p><br/><textarea id="key" cols="100" rows="10">'+
-        req.query.sdk_token+
+        res.send('<html><body><H1>InitializeMerchant Token</H1><p>This token requires this server to be running so it can ' +
+        'be refreshed automatically. It will work for about 8 hours before a refresh is required.</p><br/><textarea id="key" cols="100" rows="10">' +
+        req.query.sdk_token +
         '</textarea><script type="text/javascript">document.getElementById("key").select();</script></body>');
     });
 }
@@ -71,7 +71,17 @@ app.get('/returnFromPayPal', function (req, res) {
 });
 
 app.get('/', allErrorsAreBelongToUs, function (req, res) {
-   res.send('OK');
+    var ret = '<html><body><h1>Server is Ready</h1>';
+    if (isSetupEnabled()) {
+        if (hasLive) {
+            ret += '<a href="/setup/live">Setup a Live Account</a><br/>';
+        }
+        if (hasSandbox) {
+            ret += '<a href="/setup/sandbox">Setup a Live Account</a><br/>';
+        }
+    }
+    ret += '</body></html>';
+    res.send(ret);
 });
 
 var server = app.listen(process.env.PORT || 3000, function () {
@@ -147,9 +157,9 @@ function validateEnvironment() {
     }
 }
 
-function allErrorsAreBelongToUs(req,res,next) {
+function allErrorsAreBelongToUs(req, res, next) {
     if (errors && errors.length) {
-        res.send('<html><body><h1>Configuration Errors</h1><ul><li>'+errors.join('</li><li>')+'</li></pre></body>');
+        res.send('<html><body><h1>Configuration Errors</h1><ul><li>' + errors.join('</li><li>') + '</li></pre></body>');
     } else {
         next();
     }
@@ -179,7 +189,7 @@ function showStartupMessage() {
 }
 
 function isSetupEnabled() {
-    return (process.env.SETUP_ENABLED||'false').toLowerCase() === 'true';
+    return (process.env.SETUP_ENABLED || 'false').toLowerCase() === 'true';
 }
 
 function warn(msg) {
