@@ -32,6 +32,8 @@ if (!ROOT_URL) {
     app.use(function (req, res, next) {
         if (!ROOT_URL) {
             ROOT_URL = req.protocol + '://' + req.get('host');
+            showStartupMessage();
+            configurePayPal();
         }
         next();
     });
@@ -77,7 +79,7 @@ app.get('/', allErrorsAreBelongToUs, function (req, res) {
             ret += '<a href="/setup/live">Setup a Live Account</a><br/>';
         }
         if (hasSandbox) {
-            ret += '<a href="/setup/sandbox">Setup a Live Account</a><br/>';
+            ret += '<a href="/setup/sandbox">Setup a Sandbox Account</a><br/>';
         }
     }
     ret += '</body></html>';
@@ -127,6 +129,9 @@ function validateEnvironment() {
     if (!APP_SECURE_IDENTIFIER) {
         error('The APP_SECURE_IDENTIFIER value is missing from the environment. It should be set to a reasonably long set of random characters (e.g. 32)');
     }
+    if (!APP_REDIRECT_URL && !process.env.SETUP_ENABLED) {
+        error('Either APP_REDIRECT_URL (for third party merchant login) or SETUP_ENABLED (for first party token generation) must be set in the environment.');
+    }
     if (!PAYPAL_LIVE_CLIENTID && !PAYPAL_SANDBOX_CLIENTID) {
         error('The server must be configured for sandbox, live, or both. Neither PAYPAL_LIVE_CLIENTID or PAYPAL_SANDBOX_CLIENTID is set in the environment.');
     } else {
@@ -167,23 +172,27 @@ function allErrorsAreBelongToUs(req, res, next) {
 
 function showStartupMessage() {
     console.log('/*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-');
-    if (isSetupEnabled()) {
-        console.log(' * To generate a token for your account, open the following URL in a browser:\n *');
-        console.log(' *     LIVE:    ' + combineUrl(ROOT_URL||'/', 'setup/live'));
-        console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL||'/', 'setup/sandbox'));
-    }
-    if (APP_REDIRECT_URL) {
-        console.log(' *\n * To begin the authentication flow in your app, open a browser or webview on the target device to:\n *');
-        if (PAYPAL_LIVE_CLIENTID) {
-            console.log(' *     LIVE:    ' + combineUrl(ROOT_URL||'/', 'toPayPal/live'));
+    if (!ROOT_URL) {
+        console.log(' *\n * ROOT_URL is not set, will be set on first request.');
+    } else {
+        if (isSetupEnabled()) {
+            console.log(' * To generate a token for your account, open the following URL in a browser:\n *');
+            console.log(' *     LIVE:    ' + combineUrl(ROOT_URL || '/', 'setup/live'));
+            console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL || '/', 'setup/sandbox'));
         }
-        if (PAYPAL_SANDBOX_CLIENTID || true) {
-            console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL||'/', 'toPayPal/sandbox'));
+        if (APP_REDIRECT_URL) {
+            console.log(' *\n * To begin the authentication flow in your app, open a browser or webview on the target device to:\n *');
+            if (PAYPAL_LIVE_CLIENTID) {
+                console.log(' *     LIVE:    ' + combineUrl(ROOT_URL || '/', 'toPayPal/live'));
+            }
+            if (PAYPAL_SANDBOX_CLIENTID || true) {
+                console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL || '/', 'toPayPal/sandbox'));
+            }
+            console.log(' * \n * When the flow is complete, this site will redirect to:\n * ');
+            console.log(' *     ' + APP_REDIRECT_URL + (APP_REDIRECT_URL.indexOf('?') >= 0 ? '&' : '?') + 'sdk_token=[what you give to InitializeMerchant]');
+            console.log(' *\n * Your return url on developer.paypal.com must be set to:\n *');
+            console.log(' *     ' + combineUrl(ROOT_URL, 'returnFromPayPal') + '\n *');
         }
-        console.log(' * \n * When the flow is complete, this site will redirect to:\n * ');
-        console.log(' *     ' + APP_REDIRECT_URL + (APP_REDIRECT_URL.indexOf('?') >= 0 ? '&' : '?') + 'sdk_token=[what you give to InitializeMerchant]');
-        console.log(' *\n * Your return url on developer.paypal.com must be set to:\n *');
-        console.log(' *     ' + combineUrl(ROOT_URL, 'returnFromPayPal') + '\n *');
     }
     console.log(' *\n *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*/');
 }
