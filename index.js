@@ -60,15 +60,14 @@ module.exports = {
                     return callback(new Error('Invalid environment ' + encodeURIComponent(info[0])));
                 }
                 wreck.post(url, {
-                    payload: util.format('grant_type&refresh_token&refresh_token=%s', encodeURIComponent(info[1])),
+                    payload: util.format('grant_type=refresh_token&refresh_token=%s', encodeURIComponent(info[1])),
                     json: 'force',
                     headers: {
                         'Authorization': 'Basic ' + new Buffer(cfg.clientId + ':' + cfg.secret).toString('base64'),
                         'Content-Type': 'application/x-www-form-urlencoded'
                     }
                 }, function (err, rz, payload) {
-                    console.log(payload);
-                    callback(null, 'foo');
+                    callback(null, payload);
                 });
             } catch (x) {
                 return callback(new Error('Invalid refresh token presented.'));
