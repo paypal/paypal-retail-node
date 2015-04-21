@@ -34,7 +34,7 @@
       "required": false
     },
     "ROOT_URL": {
-      "description": "The base URL by which this server can be reached on the Internet. If not set, we will fetch from the request URL.",
+      "description": "The base URL by which this server can be reached on the Internet. If not set, we will fetch from the request URL. If you use a custom domain for your server, you'll likely want to put that URL here.",
       "required": false
     },
     "APP_REDIRECT_URL": {

@@ -169,16 +169,16 @@ function showStartupMessage() {
     console.log('/*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-');
     if (isSetupEnabled()) {
         console.log(' * To generate a token for your account, open the following URL in a browser:\n *');
-        console.log(' *     LIVE:    ' + combineUrl(ROOT_URL, 'setup/live'));
-        console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL, 'setup/sandbox'));
+        console.log(' *     LIVE:    ' + combineUrl(ROOT_URL||'/', 'setup/live'));
+        console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL||'/', 'setup/sandbox'));
     }
     if (APP_REDIRECT_URL) {
         console.log(' *\n * To begin the authentication flow in your app, open a browser or webview on the target device to:\n *');
         if (PAYPAL_LIVE_CLIENTID) {
-            console.log(' *     LIVE:    ' + combineUrl(ROOT_URL, 'toPayPal/live'));
+            console.log(' *     LIVE:    ' + combineUrl(ROOT_URL||'/', 'toPayPal/live'));
         }
         if (PAYPAL_SANDBOX_CLIENTID || true) {
-            console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL, 'toPayPal/sandbox'));
+            console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL||'/', 'toPayPal/sandbox'));
         }
         console.log(' * \n * When the flow is complete, this site will redirect to:\n * ');
         console.log(' *     ' + APP_REDIRECT_URL + (APP_REDIRECT_URL.indexOf('?') >= 0 ? '&' : '?') + 'sdk_token=[what you give to InitializeMerchant]');
