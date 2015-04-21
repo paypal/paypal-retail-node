@@ -19,7 +19,7 @@ module.exports = {
             throw new Error('Missing refreshUrl for PayPal environment "'+environment+'"');
         }
         if (!options.scopes) {
-            options.scopes = 'openid https://uri.paypal.com/services/paypalhere https://api.paypal.com/v1/payments/.* https://uri.paypal.com/services/paypalattributes/business';
+            options.scopes = 'openid email phone profile address https://uri.paypal.com/services/paypalhere https://api.paypal.com/v1/payments/.* https://uri.paypal.com/services/paypalattributes/business';
         }
         configs[environment] = options;
     },
