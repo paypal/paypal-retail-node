@@ -105,7 +105,7 @@ module.exports = {
             }
             var returnUrl = state[1] + (state[1].indexOf('?')>=0 ? '&':'?') + "sdk_token=";
             var refreshUrl = cfg.refreshUrl + (cfg.refreshUrl.indexOf('?')>=0 ? '&':'?');
-            encrypt(JSON.stringify(env, payload.refresh_token), app_secure_identifier, function encryptionDone (e,v) {
+            encrypt(JSON.stringify([env, payload.refresh_token]), app_secure_identifier, function encryptionDone (e,v) {
                 if (e) {
                     return callback(e);
                 }
