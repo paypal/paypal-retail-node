@@ -1,0 +1,74 @@
+Authentication for the Retail SDK
+=================================
+
+[TL;DR](http://www.urbandictionary.com/define.php?term=tl%3Bdr): You need to use your
+[client ID and secret from developer.paypal.com](https://developer.paypal.com/developer/applications)
+to get a token to call InitializeMerchant within the SDK. You can use our modules in your own server
+(node.js express/Kraken, ruby, Java, .Net, ...), or use one of our prebuilt Docker containers or
+Heroku builds. You can do this for free on Heroku and Amazon EC2, including SSL if you use something
+like [CloudFlare](https://blog.cloudflare.com/introducing-universal-ssl/).
+
+To get started, deploy to Heroku and then configure the environment variables in the Heroku dashboard.
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/djMax/paypal-retail-node.git)
+
+<table>
+<tr><th colspan="2">Required Environment Variables</th></tr>
+<tr><td>ROOT_URL</td><td>The root URL of your new server, e.g. http://something.herokuapp.com</td></tr>
+<tr><td>APP_SECURE_IDENTIFIER</td><td>A value [you make up](https://identitysafe.norton.com/password-generator/)
+ and keep secret to protect your PayPal refresh tokens.</td></tr>
+<tr><th colspan="2">Other Environment Variables</th></tr>
+<tr><td>PAYPAL_LIVE_CLIENTID</td><td>The PayPal client id for your application in the live environment.</td></tr>
+<tr><td>PAYPAL_LIVE_SECRET</td><td>The PayPal secret for your application in the live environment.</td></tr>
+<tr><td>PAYPAL_SANDBOX_CLIENTID</td><td>The PayPal client id for your application in the sandbox environment</td></tr>
+<tr><td>PAYPAL_SANDBOX_SECRET</td><td>The PayPal secret for your application in the sandbox environment</td></tr>
+<tr><td>APP_REDIRECT_URL</td><td>For third party use, after authentication is complete the server will redirect to
+this URL with the token for InitializeMerchant in the Retail SDK</td></tr>
+</table>
+
+Usually you're in one of these two situations:
+
+* [First Party](#First-Party) - The account I made the PayPal.com developer application with is the only one I want to transact with
+* [Third Party](#Third-Party) - I want other merchants to use my application with their own accounts and give me permission to transact for them
+
+Why can't I just put the id and secret in the app?
+==================================================
+PayPal uses [OAuth](http://en.wikipedia.org/wiki/OAuth) to authenticate an application's ability to transact on behalf of a merchant account.
+OAuth has three main "sensitive quantities" - the access token, the refresh token and the application secret. The access token is short lived (typically 15 minutes-8 hours)
+and useful only for a single account. A refresh token is long lived (by spec 10 years, in theory forever, in practice until the owner revokes it) and useful only
+for a single account. The application secret is permanent for a given application and useful for potentially all accounts.
+
+Generally, it's ok to store the access token on the end-user (e.g. mobile) device. You should still store it securely, not record it in logs, etc, but it's value is short lived.
+The refresh token should not generally live on the end-user device because it takes away another choke point for you to disable the use of your application in case the device is
+lost or stolen (because you could just "invalidate" the refresh token for that account and then that device, the next time it came to your server to refresh the token would not get a
+new access token).
+
+The application secret should never live on the end-user device because anyone who has that can infinitely refresh access tokens given refresh
+tokens, and can get an access token for YOUR account any time they want. More importantly, anyone holding the application secret can pretend to be your
+app and have an unsuspecting user give the rogue app an access and refresh token (by logging into PayPal and believing they are granting permission to your app).
+
+So our recommended approach is to use our server modules or containers to create a server that stores your application secret and provides access tokens to your end user devices.
+Our modules also employ an additional server-only password to return a "modified refresh token" to the end user device which means you don't need a database. When your application
+needs a new access token, it calls the server module and provides the modified refresh token. The server module combines that with the application secret and calls the PayPal
+servers to obtain a new access token which it delivers back to the client.
+
+Note that if you needed to make calls OUTSIDE of your application (such as from your backend services), you would need to get the access token/refresh token flow working on your
+backend services and would then need a database to store relevant user data. Doing so securely is outside of the scope of this document, but each server module readme describes
+the API, and there's no reason you can't use the same services for your other backend services.
+
+First Party
+===========
+You can go through the Login With PayPal flow and grant consent to your application just once. The token returned will include the
+"modified refresh token" that can be baked into your application and shipped. The server modules and containers we provide expose an
+endpoint for first party token creation (/setup) that can be disabled after you generate the original value. The point of the additional
+identifier (the APP_SECURE_IDENTIFIER, which you can just make up) is in the case where you have an application compromise or significant bug, you can change
+this identifier and applications with the old value will stop being able to transact on your behalf. Essentially this identifier is
+a remote kill switch that you control.
+
+Third Party
+===========
+Within this scheme there is another big question - do you have your own account system or do you want to use PayPal for
+all authentication? If you have your own account system, it's very likely you want to use our server modules instead of
+the standalone containers. In that case you would first authenticate the API caller against your own system, and verify
+the link between that account and the PayPal account before obtaining access tokens on their behalf. This provides an
+additional layer of security and control for end user applications making calls for your merchants via your app.
