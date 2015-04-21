@@ -1,0 +1,41 @@
+{
+  "name": "paypal-retail-sdk-service",
+  "description": "A service to manage your client id and secret to issue access tokens to your applications that integrate the PayPal Retail SDK",
+  "keywords": [
+    "small",
+    "sharp",
+    "tool"
+  ],
+  "repository": "https://github.com/djMax/paypal-retail-node.git",
+  "env": {
+    "ROOT_URL": {
+      "description": "The base URL by which this server can be reached on the Internet",
+      "required": true
+    },
+    "APP_SECURE_IDENTIFIER": {
+      "description": "A random value used to provide additional control to disable compromised versions of your app. If you run multiple load balanced dynos, this must be the same for all",
+      "required": true,
+      "generator": "secret"
+    },
+    "PAYPAL_LIVE_CLIENTID": {
+      "description": "The application client id for the LIVE PayPal Environment",
+      "required": false
+    },
+    "PAYPAL_LIVE_SECRET": {
+      "description": "The application secret for the LIVE PayPal Environment",
+      "required": false
+    },
+    "PAYPAL_SANDBOX_CLIENTID": {
+      "description": "The application client id for the SANDBOX PayPal Environment",
+      "required": false
+    },
+    "PAYPAL_SANDBOX_SECRET": {
+      "description": "The application secret for the SANDBOX PayPal Environment",
+      "required": false
+    },
+    "APP_REDIRECT_URL": {
+      "description": "After authentication is done, you will want this service to redirect to your app, usually with a custom URL protocol. The query argument 'sdk_token' will be appended.",
+      "required": false
+    }
+  }
+}
