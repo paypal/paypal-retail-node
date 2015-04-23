@@ -109,14 +109,12 @@ module.exports = {
                     return callback(e);
                 }
                 var tokenInformation = [
-                    env,
                     payload.access_token,
                     payload.expires_in,
                     refreshUrl + '&token=' + encodeURIComponent(v)
                 ];
 
-                returnUrl += new Buffer(JSON.stringify(tokenInformation)).toString('base64');
-                console.log('ReturnUrl', returnUrl);
+                returnUrl += env + ':' + new Buffer(JSON.stringify(tokenInformation)).toString('base64');
                 callback(null, returnUrl);
             });
         });
