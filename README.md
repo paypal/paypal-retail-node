@@ -27,14 +27,14 @@ it from the first request we see.</td></tr>
 <tr><td>PAYPAL_LIVE_SECRET</td><td>The PayPal secret for your application in the live environment.</td></tr>
 <tr><td>PAYPAL_SANDBOX_CLIENTID</td><td>The PayPal client id for your application in the sandbox environment</td></tr>
 <tr><td>PAYPAL_SANDBOX_SECRET</td><td>The PayPal secret for your application in the sandbox environment</td></tr>
-<tr><td>APP_REDIRECT_URL</td><td>For third party use, after authentication is complete the server will redirect to
-this URL with the token for InitializeMerchant in the Retail SDK</td></tr>
+<tr><td>APP_REDIRECT_URL</td><td>For third party use, *after* PayPal authentication is complete the server will redirect to
+this URL with the token for InitializeMerchant in the Retail SDK. This is usually some sort of custom URL protocol like 'myappname://paypaltoken' or similar. The URL needs to launch your app and this server will pass it the token.</td></tr>
 </table>
 
 Usually you're in one of these two situations:
 
-* [First Party](#First-Party) - The account I made the PayPal.com developer application with is the only one I want to transact with
-* [Third Party](#Third-Party) - I want other merchants to use my application with their own accounts and give me permission to transact for them
+* [First Party](#first-party) - The account I made the PayPal.com developer application with is the only one I ever want to transact with. You will use this server to get a token and then you will put that token in your app.
+* [Third Party](#third-party) - I want other merchants to use my application with their own accounts and give me permission to transact for them. You will call this server from your app to get a URL for PayPal Login, then when login completes this server will call APP_REDIRECT_URL as described above.
 
 Why can't I just put the id and secret in the app?
 ==================================================
@@ -77,3 +77,5 @@ all authentication? If you have your own account system, it's very likely you wa
 the standalone containers. In that case you would first authenticate the API caller against your own system, and verify
 the link between that account and the PayPal account before obtaining access tokens on their behalf. This provides an
 additional layer of security and control for end user applications making calls for your merchants via your app.
+
+Note: You MUST set the redirect URL of your app on developer.paypal.com to match the server to which you deploy the paypal-retail-node code with the path /returnFromPayPal appended. For example, if you've deployed to http://pph-retail-node.herokuapp.com, the return URL MUST be set to http://pph-retail-node.herokuapp.com/returnFromPayPal
