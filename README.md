@@ -10,7 +10,7 @@ to get a token to call InitializeMerchant within the SDK. You can use our module
 Heroku builds (most of this is aspirational right now). You can do this for free on Heroku and Amazon EC2,
 including SSL if you use something like [CloudFlare](https://blog.cloudflare.com/introducing-universal-ssl/).
 
-If you just want to know the gory details of what's happening at the network level, see [What's Really Going On Here?](#what_s_really_going_on_here_).
+If you just want to know the gory details of what's happening at the network level, see [What's Really Going On Here?](#whats-really-going-on-here).
 
 Once you have your [developer account on PayPal.com](https://developer.paypal.com), to get started with this Node version, deploy it to Heroku by clicking the button below and then configure the environment variables in the Heroku dashboard.
 
