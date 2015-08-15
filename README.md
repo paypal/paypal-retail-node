@@ -7,10 +7,12 @@ Authentication for the Retail SDK
 [client ID and secret from developer.paypal.com](https://developer.paypal.com/developer/applications)
 to get a token to call InitializeMerchant within the SDK. You can use our modules in your own server
 (node.js express/Kraken, ruby, Java, .Net, ...), or use one of our prebuilt Docker containers or
-Heroku builds. You can do this for free on Heroku and Amazon EC2, including SSL if you use something
-like [CloudFlare](https://blog.cloudflare.com/introducing-universal-ssl/).
+Heroku builds (most of this is aspirational right now). You can do this for free on Heroku and Amazon EC2,
+including SSL if you use something like [CloudFlare](https://blog.cloudflare.com/introducing-universal-ssl/).
 
-To get started, deploy to Heroku and then configure the environment variables in the Heroku dashboard.
+If you just want to know the gory details of what's happening at the network level, see [What's Really Going On Here?](#what_s_really_going_on_here_).
+
+Once you have your [developer account on PayPal.com](https://developer.paypal.com), to get started with this Node version, deploy it to Heroku by clicking the button below and then configure the environment variables in the Heroku dashboard.
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/djMax/paypal-retail-node.git)
 
@@ -35,6 +37,8 @@ Usually you're in one of these two situations:
 
 * [First Party](#first-party) - The account I made the PayPal.com developer application with is the only one I ever want to transact with. You will use this server to get a token and then you will put that token in your app.
 * [Third Party](#third-party) - I want other merchants to use my application with their own accounts and give me permission to transact for them. You will call this server from your app to get a URL for PayPal Login, then when login completes this server will call APP_REDIRECT_URL as described above.
+
+Click one of those links to get more information about setting up your client app for these situations.
 
 Why can't I just put the id and secret in the app?
 ==================================================
@@ -79,3 +83,57 @@ the link between that account and the PayPal account before obtaining access tok
 additional layer of security and control for end user applications making calls for your merchants via your app.
 
 Note: You MUST set the redirect URL of your app on developer.paypal.com to match the server to which you deploy the paypal-retail-node code with the path /returnFromPayPal appended. For example, if you've deployed to http://pph-retail-node.herokuapp.com, the return URL MUST be set to http://pph-retail-node.herokuapp.com/returnFromPayPal
+
+What's Really Going On Here?
+============================
+
+Fundamentally, this application manages your client id and client secret in order to generate access tokens on behalf of a merchant (which could be the same account).
+These access tokens are in turn used by your application to call certain PayPal services on behalf of the merchant. The services which you can call are determined by
+the **scopes** you request during token creation. The first time you want to generate an access token for an account,
+you must send them to PayPal.com to login and consent to the scopes you request. This is accomplished by the */toPayPal*
+endpoint in [server.js](server.js) and in turn the *redirect* method in this module (which you would use if integrating into your own node.js server). For example, for the
+client id ABCDEFG which is registered with developer.paypal.com as having a return url of http://abcdefg.com/returnFromPayPal, you would send your merchant to
+
+````
+https://www.sandbox.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=ABCDEFG&scope=openid+email+phone+profile+address+https://uri.paypal.com/services/paypalhere+https://api.paypal.com/v1/payments/.*+https://uri.paypal.com/services/paypalattributes/business&redirect_uri=http%3A%2F%2Fabcdefg.com%2FreturnFromPayPal&state=something_you_need_to_get_back
+````
+
+The redirect_uri must match the URL registered on your application details page on the [PayPal developer site](https://developer.paypal.com/developer/applications) EXACTLY.
+If you need to pass additional information that will be returned to your application post-login, use the state parameter. This implementation uses the state parameter to
+remember which environment you're trying to login to (e.g. sandbox or live).
+
+Once login is complete, PayPal will send the merchant's browser back to the redirect_uri with an *authorization code*. The URL would be something like:
+
+````
+http://abcdefg.com/returnFromPayPal?state=something_you_need_to_get_back&scope=some_scopes&code=THE_CODE_FROM_PAYPAL
+````
+
+You must take that authorization code and submit it to PayPal, along with your client id and secret, to retrieve the *access token* 
+and *refresh token*. This is handled by the */returnFromPayPal* endpoint in [server.js](server.js) or the *completeAuthentication* method 
+in the module. In reality, this is an HTTPS POST to the token endpoint (https://api.paypal.com/v1/identity/openidconnect/tokenservice) with the following URL-encoded form body:
+
+````
+grant_type=authorization_code&code=THE_CODE_FROM_PAYPAL&redirect_uri=http%3A%2F%2Fabcdefg.com%2FreturnFromPayPal
+````
+
+This should return the access and refresh tokens:
+
+````
+{ scope: 'https://uri.paypal.com/services/paypalattributes/business phone https://uri.paypal.com/services/paypalhere https://api.paypal.com/v1/payments/.* address email openid profile',
+  nonce: 'SOME_RANDOM_STUFF',
+  access_token: 'A_LONG_CODE',
+  token_type: 'Bearer',
+  expires_in: 28800,
+  refresh_token: 'A_LONGER_CODE'
+}
+ ````
+ 
+You then make requests using this access token until it expires. Once it expires (which is indicated by an error telling you so),
+you should call the refresh endpoint (https://api.paypal.com/v1/oauth2/token) with the client id and secret in the
+Authorization header and the refresh token in the body:
+ 
+````
+grant_type=refresh_token&refresh_token=A_LONGER_CODE&scope=https://uri.paypal.com/services/paypalattributes/business+phone+https://uri.paypal.com/services/paypalhere+https://api.paypal.com/v1/payments/.*+address+email+openid+profile
+````
+
+And that's all there is to making PayPal API requests using access tokens.
