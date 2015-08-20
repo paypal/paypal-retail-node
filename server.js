@@ -19,6 +19,8 @@ var ROOT_URL = process.env.ROOT_URL;
 // If you don't set this value, this server essentially becomes "first party use only" as all it can do
 // is refresh tokens generated with /firstParty
 var APP_REDIRECT_URL = process.env.APP_REDIRECT_URL;
+// If a PayPal representative gives you a custom environment string, set it as this env var
+var PAYPAL_CUSTOM_ENVIRONMENT = process.env.PAYPAL_CUSTOM_ENVIRONMENT;
 
 var errors, warnings, hasLive, hasSandbox;
 
@@ -59,7 +61,7 @@ if (isSetupEnabled()) {
 
 if (APP_REDIRECT_URL) {
     app.get('/toPayPal/:env', allErrorsAreBelongToUs, function (req, res) {
-        res.redirect(paypal.redirect(req.params.env, APP_REDIRECT_URL));
+        res.redirect(paypal.redirect(req.params.env, APP_REDIRECT_URL, !!req.query.returnTokenOnQueryString));
     });
 }
 
@@ -125,6 +127,16 @@ function configurePayPal() {
             refreshUrl: combineUrl(ROOT_URL, 'refresh'),
             scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
         });
+    }
+    if (PAYPAL_CUSTOM_ENVIRONMENT) {
+        try {
+            var info = JSON.parse(new Buffer(PAYPAL_CUSTOM_ENVIRONMENT, 'base64').toString('utf8'));
+            for (var envI = 0; envI < info.length; envI++) {
+                paypal.configure(info[envI].name, info[envI]);
+            }
+        } catch (x) {
+            error('Invalid PAYPAL_CUSTOM_ENVIRONMENT: ' + x.message);
+        }
     }
 }
 

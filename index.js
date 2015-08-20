@@ -23,7 +23,7 @@ module.exports = {
         }
         configs[environment] = options;
     },
-    redirect: function (env, finalUrl) {
+    redirect: function (env, finalUrl, returnTokenOnQueryString) {
         var cfg = configs[env];
         if (!cfg) {
             throw new Error('Invalid environment ' + encodeURIComponent(env));
@@ -31,15 +31,15 @@ module.exports = {
         if (env == module.exports.SANDBOX) {
             return util.format('https://www.sandbox.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=%s&scope=%s&redirect_uri=%s&state=%s',
                 encodeURIComponent(cfg.clientId), encodeURIComponent(cfg.scopes), encodeURIComponent(cfg.returnUrl),
-                encodeURIComponent(JSON.stringify([env,finalUrl])));
+                encodeURIComponent(JSON.stringify([env,finalUrl,!!returnTokenOnQueryString])));
         } else if (env.indexOf('stage2') === 0) {
-            return util.format('https://www.%s.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=%s&scope=%s&redirect_uri=%s&state=%s',
+            return util.format('https://www.%s.stage.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=%s&scope=%s&redirect_uri=%s&state=%s',
                 env, encodeURIComponent(cfg.clientId), encodeURIComponent(cfg.scopes), encodeURIComponent(cfg.returnUrl),
-                encodeURIComponent(JSON.stringify([env,finalUrl])));
+                encodeURIComponent(JSON.stringify([env,finalUrl,!!returnTokenOnQueryString])));
         } else {
             return util.format('https://www.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=%s&scope=%s&redirect_uri=%s&state=%s',
                 encodeURIComponent(cfg.clientId), encodeURIComponent(cfg.scopes), encodeURIComponent(cfg.returnUrl),
-                encodeURIComponent(JSON.stringify([env,finalUrl])));
+                encodeURIComponent(JSON.stringify([env,finalUrl,!!returnTokenOnQueryString])));
         }
     },
     refresh: function (query, app_secure_identifier, callback) {
@@ -86,6 +86,7 @@ module.exports = {
             throw new Error('The "state" parameter is invalid when trying to complete PayPal authentication.');
         }
         var env = state[0];
+        var returnTokenOnQueryString = state.length > 2 ? (!!state[2]) : false;
         var url = tsUrl(env);
         var cfg = configs[env];
         wreck.post(url, {
@@ -102,7 +103,10 @@ module.exports = {
             if (payload.error) {
                 return callback(new Error(payload.error + ' ' + payload.error_description));
             }
-            var returnUrl = state[1] + (state[1].indexOf('?')>=0 ? '&':'?') + "sdk_token=";
+            var returnUrl = state[1] + (state[1].indexOf('?')>=0 ? '&':'?');
+            if (!returnTokenOnQueryString) {
+                returnUrl += "sdk_token=";
+            }
             var refreshUrl = cfg.refreshUrl + (cfg.refreshUrl.indexOf('?')>=0 ? '&':'?');
             encrypt(JSON.stringify([env, payload.refresh_token]), app_secure_identifier, function encryptionDone (e,v) {
                 if (e) {
@@ -114,7 +118,14 @@ module.exports = {
                     refreshUrl + '&token=' + encodeURIComponent(v)
                 ];
 
-                returnUrl += env + ':' + new Buffer(JSON.stringify(tokenInformation)).toString('base64');
+                if (returnTokenOnQueryString) {
+                    returnUrl += 'access_token=' + encodeURIComponent(tokenInformation[0]) +
+                            '&expires_in=' + encodeURIComponent(tokenInformation[1]) +
+                            '&refresh_url=' + encodeURIComponent(tokenInformation[2]) +
+                            '&env=' + encodeURIComponent(env);
+                } else {
+                    returnUrl += env + ':' + new Buffer(JSON.stringify(tokenInformation)).toString('base64');
+                }
                 callback(null, returnUrl);
             });
         });

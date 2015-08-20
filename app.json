@@ -40,6 +40,10 @@
     "APP_REDIRECT_URL": {
       "description": "After authentication is done, you will want this service to redirect to your app, usually with a custom URL protocol. The query argument 'sdk_token' will be appended.",
       "required": false
+    },
+    "PAYPAL_CUSTOM_ENVIRONMENT": {
+      "description": "If you're using other PayPal environments besides sandbox and live, enter the value you receive from a PayPal representative here.",
+      "required": false
     }
   }
 }
