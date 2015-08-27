@@ -2,6 +2,7 @@ Authentication for the Retail SDK
 =================================
 
 [![Build Status](https://travis-ci.org/djMax/paypal-retail-node.svg)](https://travis-ci.org/djMax/paypal-retail-node)
+[![Join the chat at https://gitter.im/paypal/retail-sdk](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/paypal/retail-sdk?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [TL;DR](http://www.urbandictionary.com/define.php?term=tl%3Bdr): You need to use your
 [client ID and secret from developer.paypal.com](https://developer.paypal.com/developer/applications)
