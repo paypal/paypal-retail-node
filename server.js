@@ -68,7 +68,7 @@ if (APP_REDIRECT_URL) {
 app.get('/returnFromPayPal', function (req, res) {
     paypal.completeAuthentication(req.query, APP_SECURE_IDENTIFIER, function (error, destinationUrl) {
         if (error) {
-            console.error(util.format('Failed to handle returnFromPayPal: %s\n%s', error.message, error.stack));
+            console.error(util.format('Failed to handle returnFromPayPal (%s): %s\n%s', error.env||'unknown environment', error.message, error.stack));
             return res.status(500).send(error.message);
         }
         res.redirect(destinationUrl);

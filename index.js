@@ -98,10 +98,13 @@ module.exports = {
             }
         }, function (err, rz, payload) {
             if (err) {
+                err.env = env;
                 return callback(err);
             }
             if (payload.error) {
-                return callback(new Error(payload.error + ' ' + payload.error_description));
+                var appError = new Error(payload.error + ' ' + payload.error_description);
+                appError.env = env;
+                return callback(appError);
             }
             var returnUrl = state[1] + (state[1].indexOf('?')>=0 ? '&':'?');
             if (!returnTokenOnQueryString) {
@@ -110,6 +113,7 @@ module.exports = {
             var refreshUrl = cfg.refreshUrl + (cfg.refreshUrl.indexOf('?')>=0 ? '&':'?');
             encrypt(JSON.stringify([env, payload.refresh_token]), app_secure_identifier, function encryptionDone (e,v) {
                 if (e) {
+                    e.env = env;
                     return callback(e);
                 }
                 var tokenInformation = [
