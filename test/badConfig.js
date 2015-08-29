@@ -30,18 +30,4 @@ describe('', function () {
     it('should not fail with a good config', function () {
         paypal.configure(paypal.LIVE, {clientId: 'foo', secret: 'bar', returnUrl: 'baz', refreshUrl: 'boo'});
     });
-
-    it('should not fail with a dynamic config', function () {
-        // This is mostly here to show you how to make a custom env token
-        var config = {
-            name: 'stage2d0020',
-            clientId: 'HereSDKPOS',
-            secret: 'HereSDKPOS',
-            returnUrl: 'http://localhost:8080/returnFromPayPal',
-            refreshUrl: 'http://localhost:8080/refresh'
-        };
-        var ppCustomToken = new Buffer(JSON.stringify(config)).toString('base64');
-        console.log(ppCustomToken);
-        paypal.configure(config.name, config);
-    });
 });
