@@ -75,6 +75,9 @@ module.exports = {
         });
     },
     completeAuthentication: function (query, app_secure_identifier, callback) {
+        if (query.error) {
+            throw new Error(util.format('Login with PayPal Error! %s: %s', query.error, query.error_description));
+        }
         if (!app_secure_identifier) {
             throw new Error('app_secure_identifier parameter is required to complete authentication.');
         }
