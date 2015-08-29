@@ -75,14 +75,14 @@ module.exports = {
         });
     },
     completeAuthentication: function (query, app_secure_identifier, callback) {
-        if (query.error) {
-            throw new Error(util.format('Login with PayPal Error! %s: %s', query.error, query.error_description));
-        }
         if (!app_secure_identifier) {
             throw new Error('app_secure_identifier parameter is required to complete authentication.');
         }
         if (!callback || typeof(callback) !== 'function') {
             throw new Error('completeAuthentication requires a callback parameter that is a function.');
+        }
+        if (query.error) {
+            return callback(new Error(util.format('Login with PayPal Error! %s: %s', query.error, query.error_description)));
         }
         var state = JSON.parse(query.state);
         if (!state || state.length < 2) {
