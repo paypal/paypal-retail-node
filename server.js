@@ -108,6 +108,7 @@ var server = app.listen(process.env.PORT || 3000, function () {
 /******************************** The rest is just boring helpers ********************************/
 function configurePayPal() {
     if (hasLive) {
+	console.log('Configuring LIVE environment');
         // This line adds the live configuration to the PayPal module.
         // If you're going to write your own server, this is the money line
         paypal.configure(paypal.LIVE, {
@@ -119,6 +120,7 @@ function configurePayPal() {
         });
     }
     if (hasSandbox) {
+	console.log('Configuring SANDBOX environment');
         // This line adds the sandbox configuration to the PayPal module
         paypal.configure(paypal.SANDBOX, {
             clientId: PAYPAL_SANDBOX_CLIENTID,
@@ -132,6 +134,7 @@ function configurePayPal() {
         try {
             var info = JSON.parse(new Buffer(PAYPAL_CUSTOM_ENVIRONMENT, 'base64').toString('utf8'));
             for (var envI = 0; envI < info.length; envI++) {
+                console.log('Configuring', info[envI].name, 'environment');
                 paypal.configure(info[envI].name, info[envI]);
             }
         } catch (x) {
