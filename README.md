@@ -1,7 +1,7 @@
 Authentication for the Retail SDK
 =================================
 
-[![Build Status](https://travis-ci.org/djMax/paypal-retail-node.svg)](https://travis-ci.org/djMax/paypal-retail-node)
+[![Build Status](https://travis-ci.org/djMax/paypal-retail-node.svg)](https://travis-ci.org/paypal/paypal-retail-node)
 [![Join the chat at https://gitter.im/paypal/retail-sdk](https://img.shields.io/badge/GITTER-join%20chat-green.svg)](https://gitter.im/paypal/retail-sdk?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [TL;DR](http://www.urbandictionary.com/define.php?term=tl%3Bdr): You need to use your
@@ -15,7 +15,7 @@ If you just want to know the gory details of what's happening at the network lev
 
 Once you have your [developer account on PayPal.com](https://developer.paypal.com), to get started with this Node version, deploy it to Heroku by clicking the button below and then configure the environment variables in the Heroku dashboard.
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/djMax/paypal-retail-node.git)
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/paypal/paypal-retail-node.git)
 
 <table>
 <tr><th colspan="2">Required Environment Variables</th></tr>
