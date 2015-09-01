@@ -53,9 +53,9 @@ if (isSetupEnabled()) {
     });
     app.get('/setup', function (req, res) {
         res.send('<html><body><H1>InitializeMerchant Token</H1><p>This token requires this server to be running so it can ' +
-        'be refreshed automatically. It will work for about 8 hours before a refresh is required.</p><br/><textarea id="key" cols="100" rows="10">' +
-        req.query.sdk_token +
-        '</textarea><script type="text/javascript">document.getElementById("key").select();</script></body>');
+            'be refreshed automatically. It will work for about 8 hours before a refresh is required.</p><br/><textarea id="key" cols="100" rows="10">' +
+            req.query.sdk_token +
+            '</textarea><script type="text/javascript">document.getElementById("key").select();</script></body>');
     });
 }
 
@@ -68,7 +68,7 @@ if (APP_REDIRECT_URL) {
 app.get('/returnFromPayPal', function (req, res) {
     paypal.completeAuthentication(req.query, APP_SECURE_IDENTIFIER, function (error, destinationUrl) {
         if (error) {
-            console.error(util.format('Failed to handle returnFromPayPal (%s): %s\n%s', error.env||'unknown environment', error.message, error.stack));
+            console.error(util.format('Failed to handle returnFromPayPal (%s): %s\n%s', error.env || 'unknown environment', error.message, error.stack));
             return res.status(500).send(error.message);
         }
         res.redirect(destinationUrl);
@@ -108,7 +108,7 @@ var server = app.listen(process.env.PORT || 3000, function () {
 /******************************** The rest is just boring helpers ********************************/
 function configurePayPal() {
     if (hasLive) {
-	console.log('Configuring LIVE environment');
+        console.log('Configuring LIVE environment');
         // This line adds the live configuration to the PayPal module.
         // If you're going to write your own server, this is the money line
         paypal.configure(paypal.LIVE, {
@@ -118,9 +118,10 @@ function configurePayPal() {
             refreshUrl: combineUrl(ROOT_URL, 'refresh'),
             scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
         });
+        checkScopes(paypal.LIVE);
     }
     if (hasSandbox) {
-	console.log('Configuring SANDBOX environment');
+        console.log('Configuring SANDBOX environment');
         // This line adds the sandbox configuration to the PayPal module
         paypal.configure(paypal.SANDBOX, {
             clientId: PAYPAL_SANDBOX_CLIENTID,
@@ -129,6 +130,7 @@ function configurePayPal() {
             refreshUrl: combineUrl(ROOT_URL, 'refresh'),
             scopes: process.env.SCOPES // This is optional, we have defaults in paypal-retail-node
         });
+        checkScopes(paypal.SANDBOX);
     }
     if (PAYPAL_CUSTOM_ENVIRONMENT) {
         try {
@@ -139,6 +141,7 @@ function configurePayPal() {
                 info[envI].refreshUrl = info[envI].refreshUrl || combineUrl(ROOT_URL, 'refresh');
                 paypal.configure(info[envI].name, info[envI]);
             }
+            checkScopes(info[envI].name);
         } catch (x) {
             error('Invalid PAYPAL_CUSTOM_ENVIRONMENT: ' + x.message);
         }
@@ -185,8 +188,18 @@ function validateEnvironment() {
         warn('The APP_REDIRECT_URL value is missing from the environment. You will only be able to use this service to authenticate via /setup.');
     }
     if (!ROOT_URL) {
-        warn('The environment variable ROOT_URL should be set to the root URL of this server, such as http://paypalservice.mybossapp.com');
+        warn('The environment variable ROOT_URL should be set to the root URL of this server, such as http://mypaypalsdkserver.herokuapp.com');
     }
+}
+
+function checkScopes(env) {
+    paypal.queryAvailableScopes(env, function (e, scopes) {
+        if (e && e.missing) {
+            error('\n\n\n!!! ' + e.message +
+                '\n!!! Please go to https://developer.paypal.com/developer/applications/ and ensure the appropriate\n!!! permissions are assigned to your application in the ' + env.toUpperCase() +
+                ' environment.\n!!! Until this is done, you will not be able to login and get an SDK token.\n\n');
+        }
+    });
 }
 
 function allErrorsAreBelongToUs(req, res, next) {
@@ -200,12 +213,16 @@ function allErrorsAreBelongToUs(req, res, next) {
 function showStartupMessage() {
     console.log('/*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-');
     if (!ROOT_URL) {
-        console.log(' *\n * ROOT_URL is not set, will be set on first request.');
+        console.log(' *\n * ROOT_URL is not set, it will be set on first request and further configuration will happen then.');
     } else {
         if (isSetupEnabled()) {
             console.log(' * To generate a token for your account, open the following URL in a browser:\n *');
-            console.log(' *     LIVE:    ' + combineUrl(ROOT_URL || '/', 'setup/live'));
-            console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL || '/', 'setup/sandbox'));
+            if (hasLive) {
+                console.log(' *     LIVE:    ' + combineUrl(ROOT_URL || '/', 'setup/live'));
+            }
+            if (hasSandbox) {
+                console.log(' *     SANDBOX: ' + combineUrl(ROOT_URL || '/', 'setup/sandbox'));
+            }
         }
         if (APP_REDIRECT_URL) {
             console.log(' *\n * To begin the authentication flow in your app, open a browser or webview on the target device to:\n *');

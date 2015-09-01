@@ -5,6 +5,11 @@ var wreck = require('wreck'),
 var configs = {};
 
 module.exports = {
+    /**
+     * Create a new environment with the given configuration
+     * @param environment The name of the PayPal environment
+     * @param options An object with clientId, secret, [returnUrl], [refreshUrl], [scopes] keys (braced values are optional)
+     */
     configure: function configure(environment, options) {
         if (!options.clientId) {
             throw new Error('Missing clientId for PayPal environment "'+environment+'"');
@@ -23,6 +28,60 @@ module.exports = {
         }
         configs[environment] = options;
     },
+    /**
+     * Retrieve the scopes enabled for this application from the PayPal servers.
+     * @param env The name of the previously-configured PayPal environment
+     * @param callback (error, scopeArray)
+     */
+    queryAvailableScopes: function (env, callback) {
+        var cfg = configs[env];
+        if (!cfg) {
+            throw new Error('Invalid environment ' + encodeURIComponent(env));
+        }
+        wreck.post(oauthUrl(env), {
+            payload: 'grant_type=client_credentials&return_client_metadata=true',
+            json: 'force',
+            headers: {
+                'Authorization': 'Basic ' + new Buffer(cfg.clientId + ':').toString('base64'),
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-IDENTITY-ROUTE-TO': 'APS'
+            }
+        }, function (err, rz, payload) {
+            if (!err && payload && payload.client_metadata) {
+                payload = payload.client_metadata.scopes;
+                // As a bonus, we'll return an error if one of the scopes you are configured to request is
+                // not available.
+                if (!payload) {
+                    err = new Error('PayPal services did not return scopes for your application.');
+                }
+                var requiredScopes = cfg.scopes.split(' '), missing = [];
+                for (var si = 0; si < requiredScopes.length; si++) {
+                    if (payload.indexOf(requiredScopes[si]) < 0) {
+                        missing.push(requiredScopes[si]);
+                    }
+                }
+                if (missing.length) {
+                    err = new Error('Your application is missing the following required scopes: ' + missing.join(' '));
+                    err.missing = missing;
+                    err.required = requiredScopes;
+                }
+            } else if (!err) {
+                err = new Error('Invalid response received from PayPal services.');
+            }
+            if (err) {
+                err.response = payload;
+            }
+            callback(err, payload);
+        });
+    },
+    /**
+     * Build the URL to which the customer browser should be sent to login to PayPal and provide consent to your
+     * application.
+     * @param env The name of the previously-configured PayPal environment
+     * @param finalUrl The URL the customer browser should be sent to when auth/consent is complete
+     * @param returnTokenOnQueryString true if you want raw token information on the query string rather than an "SDK token"
+     * @returns url to send the browser
+     */
     redirect: function (env, finalUrl, returnTokenOnQueryString) {
         var cfg = configs[env];
         if (!cfg) {
@@ -42,6 +101,13 @@ module.exports = {
                 encodeURIComponent(JSON.stringify([env,finalUrl,!!returnTokenOnQueryString])));
         }
     },
+    /**
+     * Retrieve a new access token for the customer that was originally given a 'refresh url' that had an
+     * encrypted version of their refresh token on it (encrypted using the app_secure_identifier)
+     * @param query The query string arguments (usually straight from Express.JS)
+     * @param app_secure_identifier Your server encryption secret
+     * @param callback (error,newToken) called when refresh completes
+     */
     refresh: function (query, app_secure_identifier, callback) {
         if (!query.token) {
             throw new Error('Refresh token is missing from request.');
@@ -67,13 +133,20 @@ module.exports = {
                         'Content-Type': 'application/x-www-form-urlencoded'
                     }
                 }, function (err, rz, payload) {
-                    callback(null, payload);
+                    callback(err, payload);
                 });
             } catch (x) {
                 return callback(new Error('Invalid refresh token presented.'));
             }
         });
     },
+    /**
+     * After the customer returns from the URL specified in redirect(), this method will complete the process
+     * and generate an access token and refresh URL
+     * @param query The query string arguments (usually straight from Express.JS)
+     * @param app_secure_identifier Your server encryption secret
+     * @param callback (error, tokenInfo) Called with the access token and refresh url in the tokenInfo object
+     */
     completeAuthentication: function (query, app_secure_identifier, callback) {
         if (!app_secure_identifier) {
             throw new Error('app_secure_identifier parameter is required to complete authentication.');
@@ -152,6 +225,15 @@ function tsUrl(env) {
     return url;
 }
 
+function oauthUrl(env) {
+    var url = 'https://api.paypal.com/v1/oauth2/token';
+    if (env == module.exports.SANDBOX) {
+        url = 'https://api.sandbox.paypal.com/v1/oauth2/token';
+    } else if (env.indexOf('stage2') === 0) {
+        url = util.format('https://www.%s.stage.paypal.com:11888/v1/oauth2/token', env);
+    }
+    return url;
+}
 
 function encrypt(plainText, password, cb) {
     var salt = new Buffer(crypto.randomBytes(16), 'binary');
