@@ -204,7 +204,7 @@ module.exports = {
                             '&refresh_url=' + encodeURIComponent(tokenInformation[2]) +
                             '&env=' + encodeURIComponent(env);
                 } else {
-                    returnUrl += env + ':' + new Buffer(JSON.stringify(tokenInformation)).toString('base64');
+                    returnUrl += env + ':' + encodeURIComponent(new Buffer(JSON.stringify(tokenInformation)).toString('base64'));
                 }
                 callback(null, returnUrl);
             });
