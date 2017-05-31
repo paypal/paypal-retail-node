@@ -239,7 +239,7 @@ function encrypt(plainText, password, cb) {
     var salt = new Buffer(crypto.randomBytes(16), 'binary');
     var iv = new Buffer(crypto.randomBytes(16), 'binary');
 
-    crypto.pbkdf2(password, salt, 1000, 32, function (err, key) {
+    crypto.pbkdf2(password, salt, 1000, 32, 'sha1', function (err, key) {
         if (err) {
             logger.error('Failed to generate key.', err);
             cb(err, null);
@@ -266,7 +266,7 @@ function decrypt(cipherText, password, cb) {
     var hmac = cipher.slice(32, 52);
     cipherText = cipher.slice(52);
 
-    crypto.pbkdf2(password, salt, 1000, 32, function (err, key) {
+    crypto.pbkdf2(password, salt, 1000, 32, 'sha1', function (err, key) {
         if (err) {
             logger.error('Failed to generate key.', err);
             cb(err, null);
