@@ -93,10 +93,10 @@ These access tokens are in turn used by your application to call certain PayPal 
 the **scopes** you request during token creation. The first time you want to generate an access token for an account,
 you must send them to PayPal.com to login and consent to the scopes you request. This is accomplished by the */toPayPal*
 endpoint in [server.js](server.js) and in turn the *redirect* method in this module (which you would use if integrating into your own node.js server). For example, for the
-client id ABCDEFG which is registered with developer.paypal.com as having a return url of http://example.com/returnFromPayPal, you would send your merchant to
+client id EXAMPLEID which is registered with developer.paypal.com as having a return url of http://example.com/returnFromPayPal, you would send your merchant to
 
 ````
-https://www.sandbox.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=ABCDEFG&scope=openid+email+phone+profile+address+https://uri.paypal.com/services/paypalhere+https://api.paypal.com/v1/payments/.*+https://uri.paypal.com/services/paypalattributes/business&redirect_uri=http%3A%2F%2Fexample.com%2FreturnFromPayPal&state=something_you_need_to_get_back
+https://www.sandbox.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=EXAMPLEID&scope=openid+email+phone+profile+address+https://uri.paypal.com/services/paypalhere+https://api.paypal.com/v1/payments/.*+https://uri.paypal.com/services/paypalattributes/business&redirect_uri=http%3A%2F%2Fexample.com%2FreturnFromPayPal&state=something_you_need_to_get_back
 ````
 
 The redirect_uri must match the URL registered on your application details page on the [PayPal developer site](https://developer.paypal.com/developer/applications) EXACTLY.
