@@ -93,10 +93,10 @@ These access tokens are in turn used by your application to call certain PayPal 
 the **scopes** you request during token creation. The first time you want to generate an access token for an account,
 you must send them to PayPal.com to login and consent to the scopes you request. This is accomplished by the */toPayPal*
 endpoint in [server.js](server.js) and in turn the *redirect* method in this module (which you would use if integrating into your own node.js server). For example, for the
-client id ABCDEFG which is registered with developer.paypal.com as having a return url of http://abcdefg.com/returnFromPayPal, you would send your merchant to
+client id ABCDEFG which is registered with developer.paypal.com as having a return url of http://example.com/returnFromPayPal, you would send your merchant to
 
 ````
-https://www.sandbox.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=ABCDEFG&scope=openid+email+phone+profile+address+https://uri.paypal.com/services/paypalhere+https://api.paypal.com/v1/payments/.*+https://uri.paypal.com/services/paypalattributes/business&redirect_uri=http%3A%2F%2Fabcdefg.com%2FreturnFromPayPal&state=something_you_need_to_get_back
+https://www.sandbox.paypal.com/webapps/auth/protocol/openidconnect/v1/authorize?response_type=code&client_id=ABCDEFG&scope=openid+email+phone+profile+address+https://uri.paypal.com/services/paypalhere+https://api.paypal.com/v1/payments/.*+https://uri.paypal.com/services/paypalattributes/business&redirect_uri=http%3A%2F%2Fexample.com%2FreturnFromPayPal&state=something_you_need_to_get_back
 ````
 
 The redirect_uri must match the URL registered on your application details page on the [PayPal developer site](https://developer.paypal.com/developer/applications) EXACTLY.
@@ -106,7 +106,7 @@ remember which environment you're trying to login to (e.g. sandbox or live).
 Once login is complete, PayPal will send the merchant's browser back to the redirect_uri with an *authorization code*. The URL would be something like:
 
 ````
-http://abcdefg.com/returnFromPayPal?state=something_you_need_to_get_back&scope=some_scopes&code=THE_CODE_FROM_PAYPAL
+http://example.com/returnFromPayPal?state=something_you_need_to_get_back&scope=some_scopes&code=THE_CODE_FROM_PAYPAL
 ````
 
 You must take that authorization code and submit it to PayPal, along with your client id and secret, to retrieve the *access token* 
@@ -114,7 +114,7 @@ and *refresh token*. This is handled by the */returnFromPayPal* endpoint in [ser
 in the module. In reality, this is an HTTPS POST to the token endpoint (https://api.paypal.com/v1/identity/openidconnect/tokenservice) with the following URL-encoded form body:
 
 ````
-grant_type=authorization_code&code=THE_CODE_FROM_PAYPAL&redirect_uri=http%3A%2F%2Fabcdefg.com%2FreturnFromPayPal
+grant_type=authorization_code&code=THE_CODE_FROM_PAYPAL&redirect_uri=http%3A%2F%2Fexample.com%2FreturnFromPayPal
 ````
 
 This should return the access and refresh tokens:
