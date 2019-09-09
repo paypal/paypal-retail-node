@@ -120,7 +120,7 @@ grant_type=authorization_code&code=THE_CODE_FROM_PAYPAL&redirect_uri=http%3A%2F%
 This should return the access and refresh tokens:
 
 ````
-{ scope: 'https://uri.paypal.com/services/paypalattributes/business phone https://uri.paypal.com/services/paypalhere https://api.paypal.com/v1/payments/.* address email openid profile',
+{ scope: 'https://uri.paypal.com/services/paypalattributes/business https://uri.paypal.com/services/paypalhere address email openid profile',
   nonce: 'SOME_RANDOM_STUFF',
   access_token: 'A_LONG_CODE',
   token_type: 'Bearer',
